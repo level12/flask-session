@@ -9,6 +9,7 @@
     :license: BSD, see LICENSE for more details.
 """
 import time
+import sys
 from datetime import datetime
 from uuid import uuid4
 try:
@@ -446,7 +447,7 @@ class SqlAlchemySessionInterface(SessionInterface):
 
                 id = self.db.Column(self.db.Integer, primary_key=True)
                 session_id = self.db.Column(self.db.String(256), unique=True)
-                data = self.db.Column(self.db.Text)
+                data = self.db.Column(self.db.LargeBinary)
                 expiry = self.db.Column(self.db.DateTime)
 
                 def __init__(self, session_id, data, expiry):
@@ -484,12 +485,8 @@ class SqlAlchemySessionInterface(SessionInterface):
             self.db.session.commit()
             saved_session = None
         if saved_session:
-            try:
-                val = saved_session.data
-                data = self.serializer.loads(str(val))
-                return self.session_class(data, sid=sid)
-            except:
-                return self.session_class(sid=sid)
+            data = self.serializer.loads(saved_session.data)
+            return self.session_class(data, sid=sid)
         return self.session_class(sid=sid)
 
     def save_session(self, app, session, response):
